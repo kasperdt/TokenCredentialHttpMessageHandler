@@ -1,7 +1,7 @@
 ﻿using Azure.Core;
 using System.Net.Http.Headers;
 
-namespace TokenCredentialHttpMessageHandler;
+namespace HttpMessageHandlers;
 
 public sealed class TokenCredentialHttpMessageHandler : DelegatingHandler
 {
