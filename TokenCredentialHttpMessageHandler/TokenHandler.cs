@@ -1,9 +1,9 @@
 ﻿using Azure.Core;
-using Azure.Identity;
+using System.Net.Http.Headers;
 
 namespace TokenCredentialHttpMessageHandler;
 
-public class TokenCredentialHttpMessageHandler : DelegatingHandler
+public sealed class TokenCredentialHttpMessageHandler : DelegatingHandler
 {
     readonly TokenCredential _credential;
     string[]? _scopes;
@@ -21,7 +21,7 @@ public class TokenCredentialHttpMessageHandler : DelegatingHandler
         if (_scopes is not { Length: > 0 }) _scopes = [$"{request.RequestUri!.GetLeftPart(UriPartial.Authority)}/.default"];
         if (_token.ExpiresOn <= DateTimeOffset.Now)
             _token = await _credential.GetTokenAsync(new TokenRequestContext(_scopes), cancellationToken);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_token.TokenType, _token.Token);
+        request.Headers.Authorization = new AuthenticationHeaderValue(_token.TokenType, _token.Token);
         return await base.SendAsync(request, cancellationToken);
     }
 }
