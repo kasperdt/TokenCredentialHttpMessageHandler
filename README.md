@@ -5,5 +5,7 @@ An `HttpMessageHandler` that uses a `Azure.Identity.TokenCredential` to acquire 
 ## Usage
 
 ```csharp
-HttpClient client = new(new TokenCredentialHttpMessageHandler(new DefaultAzureCredential(), ["<scope>"]));
+HttpClient client = new(
+	new HttpMessageHandlers.TokenCredentialHttpMessageHandler(
+		new DefaultAzureCredential(), ["<scope>"]));
 ```
