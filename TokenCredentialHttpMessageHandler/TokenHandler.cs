@@ -9,7 +9,6 @@ public class TokenCredentialHttpMessageHandler : DelegatingHandler
     string[]? _scopes;
     AccessToken _token;
 
-
     public TokenCredentialHttpMessageHandler(TokenCredential credential, IEnumerable<string>? scopes = null, HttpMessageHandler? innerHandler = null)
         : base(innerHandler ?? new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromSeconds(90) })
     {
@@ -25,11 +24,4 @@ public class TokenCredentialHttpMessageHandler : DelegatingHandler
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(_token.TokenType, _token.Token);
         return await base.SendAsync(request, cancellationToken);
     }
-
-    void a()
-    {
-        var client = new HttpClient(new TokenCredentialHttpMessageHandler(new DefaultAzureCredential(), ["<scope>"]));
-    }
 }
-
-
