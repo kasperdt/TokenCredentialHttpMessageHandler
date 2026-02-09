@@ -12,19 +12,25 @@ public sealed class TokenCredentialHttpMessageHandler : DelegatingHandler
     Func<HttpRequestMessage, AuthenticationToken?, CancellationToken, ValueTask<AuthenticationToken>> _tokenHandler;
 
     public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, IEnumerable<string>? scopes = null, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
-        : this(credential, (a, r) => Map(a, new(scopes?.ToArray() ?? [$"{r.RequestUri!.GetLeftPart(UriPartial.Authority)}/.default"])), innerHandler: innerHandler) { }
+        : this(credential, (r) => Map(credential, new(scopes?.ToArray() ?? [$"{r.RequestUri!.GetLeftPart(UriPartial.Authority)}/.default"])), tokenReuseCriteria, innerHandler) { }
 
     public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, TokenRequestContext requestContext, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
-        : this(credential, (a, r) => requestContext, tokenReuseCriteria, innerHandler) { }
+        : this(credential, r => requestContext, tokenReuseCriteria, innerHandler) { }
 
     public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, GetTokenOptions properties, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
-        : this(credential, (a, r) => properties, tokenReuseCriteria, innerHandler) { }
+        : this(credential, r => properties, tokenReuseCriteria, innerHandler) { }
 
-    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, Func<AuthenticationTokenProvider, HttpRequestMessage, TokenRequestContext> requestResolver, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
-        : this(async (r, ct) => await credential.GetTokenAsync(Map(credential, requestResolver(credential, r)), ct), tokenReuseCriteria, innerHandler) { }
+    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, IReadOnlyDictionary<string, object> properties, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
+        : this(credential, r => properties, tokenReuseCriteria, innerHandler) { }
 
-    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, Func<AuthenticationTokenProvider, HttpRequestMessage, GetTokenOptions> requestResolver, Func<HttpRequestMessage, AuthenticationToken?, bool>?  tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
-        : this(async (r, ct) => await credential.GetTokenAsync(requestResolver(credential, r), ct), tokenReuseCriteria, innerHandler) { }
+    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, Func<HttpRequestMessage, TokenRequestContext> requestResolver, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
+        : this(credential, (r) => Map(credential, requestResolver(r)), tokenReuseCriteria, innerHandler) { }
+
+    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, Func<HttpRequestMessage, GetTokenOptions> propertiesResolver, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
+        : this(async (r, ct) => await credential.GetTokenAsync(propertiesResolver(r), ct), tokenReuseCriteria, innerHandler) { }
+
+    public TokenCredentialHttpMessageHandler(AuthenticationTokenProvider credential, Func<HttpRequestMessage, IReadOnlyDictionary<string, object>> propertiesResolver, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
+        : this(credential, (r) => credential.CreateTokenOptions(propertiesResolver(r)) ?? throw new Exception("GetTokenOptions cannot be null."), tokenReuseCriteria, innerHandler) { }
 
     public TokenCredentialHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, ValueTask<AuthenticationToken>> tokenFetcher, Func<HttpRequestMessage, AuthenticationToken?, bool>? tokenReuseCriteria = null, HttpMessageHandler? innerHandler = null)
         : this(CreateTokenFetcher(tokenFetcher, tokenReuseCriteria), innerHandler) { }
